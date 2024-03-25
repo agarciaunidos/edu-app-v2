@@ -27,10 +27,13 @@ max_tokens = 1024  # Adjust as needed
 temperature = 0.7  # Adjust as needed
 index_pinecone_hsdemocracy  = 'unidosus-edai-hsdemocracy'
 index_pinecone_asu  = 'unidosus-edai-asu'
-
+bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+embeddings = BedrockEmbeddings(client=bedrock_client, region_name="us-east-1")
+text_field = "text"
+index_pinecone = 'unidosus-edai-hsdemocracy'
 
 # Setup bedrock
-bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+
 
 def embedding_db(index_name_param):
     # we use the openAI embedding model
@@ -99,9 +102,19 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-def retrieval_answer(query,llm,retriever):
+def pinecone_db():
+    """
+    Initializes and returns the Pinecone index.
+    """
+    pc = pinecone.Pinecone(api_key=PINECONE_API_KEY)
+    index = pc.Index(index_pinecone)
+    return index
+
+def retrieval_answer(query,llm,retriever_2):
+    index = pinecone_db()
+    vectorstore = PineconeVectorStore(index, embeddings, text_field)
+    retriever = vectorstore.as_retriever(search_kwargs={'k': 100})
     compressor = CohereRerank(top_n = 20)
-    retriever = retriever
     compression_retriever = ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=retriever
     )
