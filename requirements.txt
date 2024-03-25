@@ -10,3 +10,4 @@ toml
 openai
 langchain_pinecone
 openai
+cohere
