@@ -41,7 +41,8 @@ def embedding_db(index_name_param):
     text_field = "text"
     index = pc.Index(index_name)
     vectorstore = PineconeVectorStore(index, embeddings, text_field)
-    return vectorstore
+    retriever = vectorstore.as_retriever(search_kwargs={'k': 50})
+    return retriever
    
 # Function to retrieve answers
 def retrieval_answer(query, llm_model, vector_store):        
