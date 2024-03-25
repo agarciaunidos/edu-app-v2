@@ -21,6 +21,7 @@ PINECONE_ENV = st.secrets.PINECONE_ENV
 openai_api_key = st.secrets.OPENAI_API_KEY
 kendra_index = st.secrets.KENDRA_INDEX
 bedrock_region = st.secrets.AWS_BEDROCK_REGION
+COHERE_API_KEY = st.secrets.COHERE_API_KEY
 #os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
 max_tokens = 1024  # Adjust as needed
 temperature = 0.7  # Adjust as needed
