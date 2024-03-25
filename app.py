@@ -37,7 +37,7 @@ def run():
   if prompt := st.chat_input():
       if len(prompt) > 0:
           st.info("Your Query: " + prompt)
-          answer = retrieval_answer(prompt, llm_model,vector_store)
+          answer = retrieval_answer(prompt)
           st.success(answer)
       else:
           st.error("Please enter a query.")

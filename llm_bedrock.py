@@ -31,6 +31,8 @@ bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
 embeddings = BedrockEmbeddings(client=bedrock_client, region_name="us-east-1")
 text_field = "text"
 index_pinecone = 'unidosus-edai-hsdemocracy'
+model_id = "anthropic.claude-3-sonnet-20240229-v1:0"        
+llm = BedrockChat(model_id=model_id, streaming=True)
 
 # Setup bedrock
 
@@ -48,24 +50,8 @@ def embedding_db(index_name_param):
     return retriever
    
 # Function to retrieve answers
-def retrieval_answer(query, llm_model, vector_store):        
-    # Select the model based on user choice
-    if llm_model == 'Anthropic Claude V3':
-        model_id = "anthropic.claude-3-sonnet-20240229-v1:0"        
-        llm = BedrockChat(model_id=model_id, streaming=True)
-    elif llm_model == 'GPT-4-1106-preview':
-        llm = ChatOpenAI(model_name="gpt-4-1106-preview",openai_api_key = openai_api_key)
-
-    else:
-        return "Invalid LLM model selection."
-    
-     # Select the Retriever based on user choice
-    if vector_store == 'Pinecone: Highschool democracy':
-        retriever = embedding_db(index_pinecone_hsdemocracy)
-        response = retrieval_answer(query,llm,retriever)
-    elif vector_store == 'Pinecone: University of Arizona':
-        retriever = embedding_db(index_pinecone_asu)
-        response = retrieval_answer(query,llm,retriever)
+def retrieval_answer(query):        
+    response = retrieval_answer(query)
     return response
 
 from operator import itemgetter
@@ -110,10 +96,10 @@ def pinecone_db():
     index = pc.Index(index_pinecone)
     return index
 
-def retrieval_answer(query,llm,retriever_2):
+def retrieval_answer(query):
     index = pinecone_db()
     vectorstore = PineconeVectorStore(index, embeddings, text_field)
-    retriever = vectorstore.as_retriever(search_kwargs={'k': 100})
+    retriever = vectorstore.as_retriever(search_kwargs={'k': 50})
     compressor = CohereRerank(top_n = 20)
     compression_retriever = ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=retriever
