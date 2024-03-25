@@ -57,19 +57,61 @@ def retrieval_answer(query, llm_model, vector_store):
      # Select the Retriever based on user choice
     if vector_store == 'Pinecone: Highschool democracy':
         retriever = embedding_db(index_pinecone_hsdemocracy)
-        source = 'Pinecone'
+        response = retrieval_answer(query,llm,retriever)
     elif vector_store == 'Pinecone: University of Arizona':
         retriever = embedding_db(index_pinecone_asu)
-        source = 'Pinecone'
-    else:
-        return "Invalid Vector DB selection."
-    #llm = Bedrock(model_id=model_id, region_name=bedrock_region, client=bedrock_client, model_kwargs=model_kwargs)
+        response = retrieval_answer(query,llm,retriever)
+    return response
 
-    if source == 'Pinecone':
-        qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever.as_retriever())
-        response = qa(query)
-    elif source == 'Kendra':
-        qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever)
-        response = qa(query)
-    return response['result']
+from operator import itemgetter
+from typing import List
+from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import (
+    RunnableLambda,
+    RunnableParallel,
+    RunnablePassthrough,
+)
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import CohereRerank
+from langchain_core.prompts import ChatPromptTemplate
 
+def format_docs(docs: List[Document]) -> str:
+    """Convert Documents to a single string.:"""
+    formatted = [
+        f"Article Title: {doc.metadata['title']}\nArticle Snippet: {doc.page_content}"
+        for doc in docs
+    ]
+    return "\n\n" + "\n\n".join(formatted)
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """
+                You're a helpful AI assistant. Given a user question answer the user question generating a comprensive analysis
+                If none of the retrieved documents answer the question, just say you don't know.\n\nHere are the retrieved docuemnts from vector db:{context}",
+            """      
+         ),
+        ("human", "{question}"),
+    ]
+)
+
+def retrieval_answer(query,llm,retriever):
+    compressor = CohereRerank(top_n = 20)
+    retriever = retriever
+    compression_retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=retriever
+    )
+    format = itemgetter("docs") | RunnableLambda(format_docs)
+    # subchain for generating an answer once we've done retrieval
+    answer = prompt | llm | StrOutputParser()
+    # complete chain that calls wiki -> formats docs to string -> runs answer subchain -> returns just the answer and retrieved docs.
+    chain = (
+        RunnableParallel(question=RunnablePassthrough(), docs=compression_retriever)
+        .assign(context=format)
+        .assign(answer=answer)
+        .pick(["answer", "docs"])
+    )
+    respond = chain.invoke(query)
+    return respond

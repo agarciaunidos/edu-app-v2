@@ -31,7 +31,7 @@ def run():
 
 
   with st.sidebar:
-      llm_model = st.selectbox("Select LLM", ["Anthropic Claude V2","GPT-4-1106-preview"])
+      llm_model = st.selectbox("Select LLM", ["Anthropic Claude V3","GPT-4-1106-preview"])
       vector_store = st.selectbox("Select Vector DB", ["Pinecone: Highschool democracy", "Pinecone: University of Arizona"])
 
   if prompt := st.chat_input():
