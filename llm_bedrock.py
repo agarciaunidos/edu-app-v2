@@ -99,17 +99,13 @@ def pinecone_db():
 def retrieval_answer(query):
     index = pinecone_db()
     vectorstore = PineconeVectorStore(index, embeddings, text_field)
-    retriever = vectorstore.as_retriever(search_kwargs={'k': 50})
-    compressor = CohereRerank(top_n = 20)
-    compression_retriever = ContextualCompressionRetriever(
-        base_compressor=compressor, base_retriever=retriever
-    )
+    #retriever = vectorstore.as_retriever(search_kwargs={'k': 50})
     format = itemgetter("docs") | RunnableLambda(format_docs)
     # subchain for generating an answer once we've done retrieval
     answer = prompt | llm | StrOutputParser()
     # complete chain that calls wiki -> formats docs to string -> runs answer subchain -> returns just the answer and retrieved docs.
     chain = (
-        RunnableParallel(question=RunnablePassthrough(), docs=compression_retriever)
+        RunnableParallel(question=RunnablePassthrough(), docs=vectorstore.from_documents())
         .assign(context=format)
         .assign(answer=answer)
         .pick(["answer", "docs"])
