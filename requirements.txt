@@ -8,3 +8,5 @@ pinecone-client
 boto3
 toml
 openai
+langchain_pinecone
+openai
