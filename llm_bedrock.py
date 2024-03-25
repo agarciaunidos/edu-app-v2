@@ -99,7 +99,7 @@ def pinecone_db():
 def retrieval_answer(query):
     index = pinecone_db()
     vectorstore = PineconeVectorStore(index, embeddings, text_field)
-    retriever = vectorstore.as_retriever(search_kwargs={'filter': 'k': 50})
+    retriever = vectorstore.as_retriever(search_kwargs={'k': 50})
     docs = retriever._get_relevant_documents(query, run_manager=None)
     #retriever = vectorstore.as_retriever(search_kwargs={'k': 50})
     format = itemgetter("docs") | RunnableLambda(format_docs)
