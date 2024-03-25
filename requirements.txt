@@ -1,0 +1,10 @@
+altair
+numpy
+pandas
+pydeck
+streamlit
+langchain
+pinecone-client
+boto3
+toml
+openai
